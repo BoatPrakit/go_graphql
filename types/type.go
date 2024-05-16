@@ -17,3 +17,26 @@ var ContactType = graphql.NewObject(graphql.ObjectConfig{
 	},
 },
 )
+
+var TransactionType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "Transaction",
+	Fields: graphql.Fields{
+		"id":            &graphql.Field{Type: graphql.Int},
+		"bankAccountId": &graphql.Field{Type: graphql.String},
+		"amount":        &graphql.Field{Type: graphql.Int},
+		"status":        &graphql.Field{Type: graphql.Int},
+		"createdAt":     &graphql.Field{Type: graphql.DateTime},
+	},
+},
+)
+
+var BankAccountType = graphql.NewObject(graphql.ObjectConfig{
+	Name: "BankAccount",
+	Fields: graphql.Fields{
+		"id":        &graphql.Field{Type: graphql.Int},
+		"accountId": &graphql.Field{Type: graphql.String},
+		"name":      &graphql.Field{Type: graphql.String},
+		"balance":   &graphql.Field{Type: graphql.Int},
+	},
+},
+)

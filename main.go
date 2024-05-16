@@ -25,7 +25,8 @@ func main() {
 
 	// Define GraphQL schema
 	var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-		Query: createRootQuery(db),
+		Query:    createRootQuery(db),
+		Mutation: createMutation(db),
 	})
 	// Create GraphQL handler
 
@@ -74,4 +75,29 @@ func createRootQuery(db *sql.DB) *graphql.Object {
 		},
 	})
 	return rootQuery
+}
+
+func createMutation(db *sql.DB) *graphql.Object {
+	r := resolvers.NewTransactionResolver(db)
+
+	rootMutation := graphql.NewObject(graphql.ObjectConfig{
+		Name: "Mutation",
+		Fields: graphql.Fields{
+			"createDepositTransaction": &graphql.Field{
+				Type: graphql.Int,
+				Args: graphql.FieldConfigArgument{
+					"transaction": &graphql.ArgumentConfig{Type: graphql.NewInputObject(graphql.InputObjectConfig{
+						Name: "TransactionInput",
+						Fields: graphql.InputObjectConfigFieldMap{
+							"bankAccountId": &graphql.InputObjectFieldConfig{Type: graphql.String},
+							"amount":        &graphql.InputObjectFieldConfig{Type: graphql.Int},
+							"status":        &graphql.InputObjectFieldConfig{Type: graphql.Int},
+						},
+					})},
+				},
+				Resolve: r.InsertTransaction,
+			},
+		},
+	})
+	return rootMutation
 }
