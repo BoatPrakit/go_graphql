@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/boatprakit/graphql/types"
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
 	_ "github.com/mattn/go-sqlite3"
@@ -41,66 +42,6 @@ func main() {
 
 // Define root query
 func createRootQuery(db *sql.DB) *graphql.Object {
-	contactField := graphql.NewObject(graphql.ObjectConfig{
-		Name: "Contact",
-		Fields: graphql.Fields{
-			"id": &graphql.Field{
-				Type: graphql.Int,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).ID, nil
-				},
-			},
-			"name": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).Name, nil
-				},
-			},
-			"firstName": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).FirstName, nil
-				},
-			},
-			"lastName": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).LastName, nil
-				},
-			},
-			"genderId": &graphql.Field{
-				Type: graphql.Int,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).GenderID, nil
-				},
-			},
-			"dob": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).DOB, nil
-				},
-			},
-			"email": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).Email, nil
-				},
-			},
-			"phone": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).Phone, nil
-				},
-			},
-			"address": &graphql.Field{
-				Type: graphql.String,
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return p.Source.(Contact).Address, nil
-				},
-			},
-		},
-	})
-
 	var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 		Name: "RootQuery",
 		Fields: graphql.Fields{
@@ -112,7 +53,7 @@ func createRootQuery(db *sql.DB) *graphql.Object {
 				},
 			},
 			"contact": &graphql.Field{
-				Type: graphql.NewList(contactField),
+				Type: graphql.NewList(types.ContactType),
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					rows, _ := db.Query("SELECT * FROM contact")
 					var contacts []Contact
