@@ -3,10 +3,12 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/boatprakit/graphql/types"
 	"github.com/graphql-go/graphql"
+	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/graphql-go/handler"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -30,6 +32,10 @@ func main() {
 		Schema:     &schema,
 		Pretty:     true,
 		Playground: true,
+		FormatErrorFn: func(err error) gqlerrors.FormattedError {
+			slog.Error(err.Error())
+			return gqlerrors.FormatError(err)
+		},
 	})
 
 	// Serve GraphQL API at /graphql endpoint
