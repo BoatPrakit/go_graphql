@@ -67,9 +67,7 @@ func createRootQuery(db *sql.DB) *graphql.Object {
 			"getContactById": &graphql.Field{
 				Type: types.ContactType,
 				Args: graphql.FieldConfigArgument{
-					"id": &graphql.ArgumentConfig{
-						Type: graphql.Int,
-					},
+					"id": &graphql.ArgumentConfig{Type: graphql.Int},
 				},
 				Resolve: r.ContactById,
 			},
