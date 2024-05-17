@@ -6,13 +6,21 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/boatprakit/graphql/resolvers"
-	"github.com/boatprakit/graphql/types"
+	"github.com/boatprakit/graphql/contact"
+	"github.com/boatprakit/graphql/transaction"
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/graphql-go/handler"
 	_ "github.com/mattn/go-sqlite3"
 )
+
+type rootQuery struct {
+	contactStorage     *contact.Storage
+	transactionStorage *transaction.Storage
+}
+type rootMutation struct {
+	transactionStorage *transaction.Storage
+}
 
 func main() {
 
@@ -23,13 +31,27 @@ func main() {
 	}
 	defer db.Close()
 
+	// Create contact storage
+	contactStorage := contact.NewStorage(db)
+	transactionStorage := transaction.NewTransactionStorage(db)
+
+	// Create root query
+	rootQuery := rootQuery{
+		contactStorage:     contactStorage,
+		transactionStorage: transactionStorage,
+	}
+
+	rootMutation := rootMutation{
+		transactionStorage: transactionStorage,
+	}
+
 	// Define GraphQL schema
 	var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-		Query:    createRootQuery(db),
-		Mutation: createMutation(db),
+		Query:    createRootQuery(rootQuery),
+		Mutation: createMutation(rootMutation),
 	})
-	// Create GraphQL handler
 
+	// Create GraphQL handler
 	graphqlHandler := handler.New(&handler.Config{
 		Schema:     &schema,
 		Pretty:     true,
@@ -49,9 +71,9 @@ func main() {
 }
 
 // Define root query
-func createRootQuery(db *sql.DB) *graphql.Object {
-	r := resolvers.NewContactResolver(db)
-	t := resolvers.NewTransactionResolver(db)
+func createRootQuery(rq rootQuery) *graphql.Object {
+	r := contact.NewContactResolver(rq.contactStorage)
+	t := transaction.NewTransactionResolver(rq.transactionStorage)
 	var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 		Name: "RootQuery",
 		Fields: graphql.Fields{
@@ -63,27 +85,27 @@ func createRootQuery(db *sql.DB) *graphql.Object {
 				},
 			},
 			"contact": &graphql.Field{
-				Type:    graphql.NewList(types.ContactType),
+				Type:    graphql.NewList(contact.ContactType),
 				Resolve: r.Contacts,
 			},
 			"getContactById": &graphql.Field{
-				Type: types.ContactType,
+				Type: contact.ContactType,
 				Args: graphql.FieldConfigArgument{
 					"id": &graphql.ArgumentConfig{Type: graphql.Int},
 				},
 				Resolve: r.ContactById,
 			},
 			"transaction": &graphql.Field{
-				Type:    graphql.NewList(types.TransactionType),
-				Resolve: t.Transaction,
+				Type:    graphql.NewList(transaction.TransactionType),
+				Resolve: t.GetAllTransaction,
 			},
 		},
 	})
 	return rootQuery
 }
 
-func createMutation(db *sql.DB) *graphql.Object {
-	r := resolvers.NewTransactionResolver(db)
+func createMutation(rm rootMutation) *graphql.Object {
+	r := transaction.NewTransactionResolver(rm.transactionStorage)
 
 	rootMutation := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
@@ -92,7 +114,7 @@ func createMutation(db *sql.DB) *graphql.Object {
 				Type: graphql.Int,
 				Args: graphql.FieldConfigArgument{
 					"transaction": &graphql.ArgumentConfig{
-						Type: types.TransactionInput,
+						Type: transaction.TransactionInput,
 					},
 				},
 				Resolve: r.InsertTransaction,
@@ -101,7 +123,7 @@ func createMutation(db *sql.DB) *graphql.Object {
 				Type: graphql.NewList(graphql.Int),
 				Args: graphql.FieldConfigArgument{
 					"transactions": &graphql.ArgumentConfig{
-						Type: graphql.NewList(types.TransactionInput),
+						Type: graphql.NewList(transaction.TransactionInput),
 					},
 				},
 				Resolve: r.InsertMultipleTransaction,
