@@ -51,6 +51,7 @@ func main() {
 // Define root query
 func createRootQuery(db *sql.DB) *graphql.Object {
 	r := resolvers.NewContactResolver(db)
+	t := resolvers.NewTransactionResolver(db)
 	var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 		Name: "RootQuery",
 		Fields: graphql.Fields{
@@ -72,6 +73,10 @@ func createRootQuery(db *sql.DB) *graphql.Object {
 				},
 				Resolve: r.ContactById,
 			},
+			"transaction": &graphql.Field{
+				Type:    graphql.NewList(types.TransactionType),
+				Resolve: t.Transaction,
+			},
 		},
 	})
 	return rootQuery
@@ -86,16 +91,20 @@ func createMutation(db *sql.DB) *graphql.Object {
 			"createDepositTransaction": &graphql.Field{
 				Type: graphql.Int,
 				Args: graphql.FieldConfigArgument{
-					"transaction": &graphql.ArgumentConfig{Type: graphql.NewInputObject(graphql.InputObjectConfig{
-						Name: "TransactionInput",
-						Fields: graphql.InputObjectConfigFieldMap{
-							"bankAccountId": &graphql.InputObjectFieldConfig{Type: graphql.String},
-							"amount":        &graphql.InputObjectFieldConfig{Type: graphql.Int},
-							"status":        &graphql.InputObjectFieldConfig{Type: graphql.Int},
-						},
-					})},
+					"transaction": &graphql.ArgumentConfig{
+						Type: types.TransactionInput,
+					},
 				},
 				Resolve: r.InsertTransaction,
+			},
+			"createDepositTransactions": &graphql.Field{
+				Type: graphql.NewList(graphql.Int),
+				Args: graphql.FieldConfigArgument{
+					"transactions": &graphql.ArgumentConfig{
+						Type: graphql.NewList(types.TransactionInput),
+					},
+				},
+				Resolve: r.InsertMultipleTransaction,
 			},
 		},
 	})
