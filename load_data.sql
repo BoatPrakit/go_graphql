@@ -22,3 +22,10 @@ VALUES
 
 -- -- Update created_at timestamp for all rows
 -- UPDATE contact SET created_at = STRFTIME('%Y-%m-%d %H:%M:%S', 'now');
+
+-- Insert data into the `users` table
+INSERT INTO users (user_id, email, password)
+VALUES
+('user1', 'user1@example.com', 'password1'),
+('user2', 'user2@example.com', 'password2'),
+('user3', 'user3@example.com', 'password3');

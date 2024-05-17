@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/boatprakit/graphql/auth"
 	"github.com/boatprakit/graphql/contact"
 	"github.com/boatprakit/graphql/transaction"
 	"github.com/graphql-go/graphql"
@@ -20,6 +21,7 @@ type rootQuery struct {
 }
 type rootMutation struct {
 	transactionStorage *transaction.Storage
+	authStorage        *auth.Storage
 }
 
 func main() {
@@ -34,6 +36,7 @@ func main() {
 	// Create contact storage
 	contactStorage := contact.NewStorage(db)
 	transactionStorage := transaction.NewTransactionStorage(db)
+	authStorage := auth.NewStorage(db)
 
 	// Create root query
 	rootQuery := rootQuery{
@@ -43,6 +46,7 @@ func main() {
 
 	rootMutation := rootMutation{
 		transactionStorage: transactionStorage,
+		authStorage:        authStorage,
 	}
 
 	// Define GraphQL schema
@@ -106,6 +110,7 @@ func createRootQuery(rq rootQuery) *graphql.Object {
 
 func createMutation(rm rootMutation) *graphql.Object {
 	r := transaction.NewTransactionResolver(rm.transactionStorage)
+	a := auth.NewResolver(rm.authStorage)
 
 	rootMutation := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
@@ -127,6 +132,39 @@ func createMutation(rm rootMutation) *graphql.Object {
 					},
 				},
 				Resolve: r.InsertMultipleTransaction,
+			},
+			"login": &graphql.Field{
+				Type: graphql.NewObject(graphql.ObjectConfig{
+					Name: "LoginResponse",
+					Fields: graphql.Fields{
+						"token": &graphql.Field{Type: graphql.String},
+					},
+				}),
+				Args: graphql.FieldConfigArgument{
+					"email": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"password": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+				},
+				Resolve: a.Login,
+			},
+			"register": &graphql.Field{
+				Type: graphql.Boolean,
+				Args: graphql.FieldConfigArgument{
+					"user": &graphql.ArgumentConfig{
+						Type: graphql.NewInputObject(graphql.InputObjectConfig{
+							Name: "RegisterInput",
+							Fields: graphql.InputObjectConfigFieldMap{
+								"name":     &graphql.InputObjectFieldConfig{Type: graphql.String},
+								"email":    &graphql.InputObjectFieldConfig{Type: graphql.String},
+								"password": &graphql.InputObjectFieldConfig{Type: graphql.String},
+							},
+						}),
+					},
+				},
+				Resolve: a.Register,
 			},
 		},
 	})
